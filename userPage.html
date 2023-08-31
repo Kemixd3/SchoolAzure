@@ -1,0 +1,70 @@
+<!-- Display user's favorite artists -->
+<h1 id="username">User page</h1>
+<p>This is your current favorite artists:</p>
+<ul id="favoriteArtistsList">
+  <!-- Display each favorite artist -->
+  <!-- Example: <li>Favorite Artist 1</li> -->
+</ul>
+
+<script>
+  const usernameElement = document.getElementById("username");
+  const storedUsername = "USERNAME"; // This will be replaced by the username value on the server side
+  usernameElement.textContent = "Hello " + storedUsername;
+
+  // Fetch user's favorite artists and update UI
+  fetch("/userFavorites") // You need to define a route to fetch user's favorites
+    .then((response) => response.json())
+    .then((data) => {
+      const favoriteArtistsList = document.getElementById(
+        "favoriteArtistsList"
+      );
+      data.favorites.forEach((artistName) => {
+        const listItem = document.createElement("li");
+        const newTab = document.createElement("a");
+        newTab.textContent = "Open in new tab";
+        newTab.href = `/${artistName}`;
+        listItem.textContent = `${artistName}`;
+
+        favoriteArtistsList.appendChild(listItem);
+        favoriteArtistsList.appendChild(newTab);
+      });
+    })
+    .catch((error) => console.error(error));
+</script>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+    margin: 0;
+    padding: 0;
+    color: #333;
+  }
+
+  h1 {
+    margin: 20px;
+    font-size: 28px;
+    color: #333;
+  }
+
+  p {
+    margin: 10px;
+  }
+
+  ul {
+    list-style-type: none;
+    padding: 0;
+  }
+
+  li {
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #fff;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  a {
+    color: #007bff;
+    text-decoration: none;
+  }
+</style>

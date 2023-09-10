@@ -193,6 +193,12 @@ app.get("/albums", (req, res) => {
 });
 
 app.get("/tracks", (req, res) => {
+  const pageSize = 20;
+  const pageNum = req.query.pageNum || 1; // Get the page number from the query parameters (default to 1 if not provided)
+
+  // Calculate the offset based on the page number and page size
+  const offset = (pageNum - 1) * pageSize;
+
   // Create a connection from the pool
   pool.getConnection((err, connection) => {
     if (err) {
@@ -201,9 +207,11 @@ app.get("/tracks", (req, res) => {
       return;
     }
 
-    // Retrieve tracks from the database
-    const selectQuery = "SELECT * FROM tracks";
-    connection.query(selectQuery, (selectErr, tracks) => {
+    // Retrieve tracks from the database with pagination
+    const selectQuery = "SELECT * FROM tracks LIMIT ? OFFSET ?";
+    const values = [pageSize, offset];
+
+    connection.query(selectQuery, values, (selectErr, tracks) => {
       if (selectErr) {
         console.error("Error retrieving tracks:", selectErr);
         res.status(500).send("Error retrieving tracks");

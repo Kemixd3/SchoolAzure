@@ -1,6 +1,6 @@
 const express = require("express");
 const mysql = require("mysql");
-const bodyParser = require("body-parser"); // Required to parse the request body
+const bodyParser = require("body-parser");
 const fs = require("fs");
 
 const app = express();
@@ -12,14 +12,67 @@ const dbConfig = {
   password: "!Silas1234",
   database: "skoledb",
   ssl: {
-    ca: fs.readFileSync("ssl/DigiCertGlobalRootCA.crt.pem"), // Path to your CA certificate file
+    ca: fs.readFileSync("ssl/DigiCertGlobalRootCA.crt.pem"),
   },
 };
 
-// Create a MySQL connection pool
+app.post("/album_artists", (req, res) => {
+  const { album_id, artist_id } = req.body;
+  const sql = "INSERT INTO Album_Artists (album_id, artist_id) VALUES (?, ?)";
+  db.query(sql, [album_id, artist_id], (err, result) => {
+    if (err) {
+      console.error("Error creating album-artist relationship:", err);
+      res.status(500).send("Error creating album-artist relationship");
+      return;
+    }
+    res.status(201).json({ relationship_id: result.insertId });
+  });
+});
+
+app.post("/track_artists", (req, res) => {
+  const { track_id, artist_id } = req.body;
+  const sql = "INSERT INTO Track_Artists (track_id, artist_id) VALUES (?, ?)";
+  db.query(sql, [track_id, artist_id], (err, result) => {
+    if (err) {
+      console.error("Error creating track-artist relationship:", err);
+      res.status(500).send("Error creating track-artist relationship");
+      return;
+    }
+    res.status(201).json({ relationship_id: result.insertId });
+  });
+});
+
+app.post("/related_albums", (req, res) => {
+  const { original_album_id, related_album_id } = req.body;
+  const sql =
+    "INSERT INTO Related_Albums (original_album_id, related_album_id) VALUES (?, ?)";
+  db.query(sql, [original_album_id, related_album_id], (err, result) => {
+    if (err) {
+      console.error("Error creating related album relationship:", err);
+      res.status(500).send("Error creating related album relationship");
+      return;
+    }
+    res.status(201).json({ relationship_id: result.insertId });
+  });
+});
+
+app.post("/album_tracks", (req, res) => {
+  const { album_id, track_id, track_order } = req.body;
+  const sql =
+    "INSERT INTO Album_Tracks (album_id, track_id, track_order) VALUES (?, ?, ?)";
+  db.query(sql, [album_id, track_id, track_order], (err, result) => {
+    if (err) {
+      console.error("Error creating album tracklisting:", err);
+      res.status(500).send("Error creating album tracklisting");
+      return;
+    }
+    res.status(201).json({ tracklisting_id: result.insertId });
+  });
+});
+
 const pool = mysql.createPool(dbConfig);
 
-app.use(bodyParser.json()); // Parse JSON request body
+app.use(bodyParser.json());
 
 app.post("/signup", (req, res) => {
   try {
@@ -35,8 +88,6 @@ app.post("/signup", (req, res) => {
         return;
       }
 
-      // Check if the user already exists
-      // Insert the new user into the database
       const insertQuery =
         "INSERT INTO users (name, email, password, image) VALUES (?, ?, ?, ?)";
       connection.query(
@@ -50,7 +101,7 @@ app.post("/signup", (req, res) => {
             res.status(201).send("User registered successfully");
           }
 
-          connection.release(); // Release the connection back to the pool
+          connection.release();
         }
       );
     });
@@ -60,116 +111,34 @@ app.post("/signup", (req, res) => {
   }
 });
 
-app.post("/create-artist", (req, res) => {
-  try {
-    const { name, age, image, description } = req.body;
-
-    // Create a connection from the pool
-    pool.getConnection((err, connection) => {
-      if (err) {
-        console.error("Error getting MySQL connection:", err);
-        res.status(500).send("Error creating artist");
-        return;
-      }
-
-      // Insert the new artist into the database
-      const insertQuery =
-        "INSERT INTO artists (name, age, image, description) VALUES (?, ?, ?, ?)";
-      connection.query(
-        insertQuery,
-        [name, age, image, description],
-        (insertErr) => {
-          if (insertErr) {
-            console.error("Error creating artist:", insertErr);
-            res.status(500).send("Error creating artist");
-          } else {
-            res.status(201).send("Artist created successfully");
-          }
-
-          connection.release(); // Release the connection back to the pool
-        }
-      );
-    });
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).send("Error creating artist");
-  }
+app.post("/albums", (req, res) => {
+  const { album_title, release_date } = req.body;
+  const sql = "INSERT INTO Albums (album_title, release_date) VALUES (?, ?)";
+  db.query(sql, [album_title, release_date], (err, result) => {
+    if (err) {
+      console.error("Error creating album:", err);
+      res.status(500).send("Error creating album");
+      return;
+    }
+    res.status(201).json({ album_id: result.insertId });
+  });
 });
 
-app.post("/create-album", (req, res) => {
-  try {
-    const { artist_id, title, release_date, image, description } = req.body;
-
-    // Create a connection from the pool
-    pool.getConnection((err, connection) => {
-      if (err) {
-        console.error("Error getting MySQL connection:", err);
-        res.status(500).send("Error creating album");
-        return;
-      }
-
-      // Insert the new album into the database
-      const insertQuery =
-        "INSERT INTO albums (artist_id, title, release_date, image, description) VALUES (?, ?, ?, ?, ?)";
-      connection.query(
-        insertQuery,
-        [artist_id, title, release_date, image, description],
-        (insertErr) => {
-          if (insertErr) {
-            console.error("Error creating album:", insertErr);
-            res.status(500).send("Error creating album");
-          } else {
-            res.status(201).send("Album created successfully");
-          }
-
-          connection.release(); // Release the connection back to the pool
-        }
-      );
-    });
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).send("Error creating album");
-  }
-});
-
-app.post("/create-track", (req, res) => {
-  try {
-    const { album_id, title, duration, description } = req.body;
-
-    // Create a connection from the pool
-    pool.getConnection((err, connection) => {
-      if (err) {
-        console.error("Error getting MySQL connection:", err);
-        res.status(500).send("Error creating track");
-        return;
-      }
-
-      // Insert the new track into the database
-      const insertQuery =
-        "INSERT INTO tracks (album_id, title, duration, description) VALUES (?, ?, ?, ?)";
-      connection.query(
-        insertQuery,
-        [album_id, title, duration, description],
-        (insertErr) => {
-          if (insertErr) {
-            console.error("Error creating track:", insertErr);
-            res.status(500).send("Error creating track");
-          } else {
-            res.status(201).send("Track created successfully");
-          }
-
-          connection.release(); // Release the connection back to the pool
-        }
-      );
-    });
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).send("Error creating track");
-  }
+app.post("/tracks", (req, res) => {
+  const { track_title, duration, album_id } = req.body;
+  const sql =
+    "INSERT INTO Tracks (track_title, duration, album_id) VALUES (?, ?, ?)";
+  db.query(sql, [track_title, duration, album_id], (err, result) => {
+    if (err) {
+      console.error("Error creating track:", err);
+      res.status(500).send("Error creating track");
+      return;
+    }
+    res.status(201).json({ track_id: result.insertId });
+  });
 });
 
 app.get("/albums", (req, res) => {
-  // Create a connection from the pool
   pool.getConnection((err, connection) => {
     if (err) {
       console.error("Error getting MySQL connection:", err);
@@ -177,7 +146,6 @@ app.get("/albums", (req, res) => {
       return;
     }
 
-    // Retrieve albums from the database
     const selectQuery = "SELECT * FROM albums";
     connection.query(selectQuery, (selectErr, albums) => {
       if (selectErr) {
@@ -187,19 +155,17 @@ app.get("/albums", (req, res) => {
         res.status(200).json(albums);
       }
 
-      connection.release(); // Release the connection back to the pool
+      connection.release();
     });
   });
 });
 
 app.get("/tracks", (req, res) => {
   const pageSize = 20;
-  const pageNum = req.query.pageNum || 1; // Get the page number from the query parameters (default to 1 if not provided)
+  const pageNum = req.query.pageNum || 1;
 
-  // Calculate the offset based on the page number and page size
   const offset = (pageNum - 1) * pageSize;
 
-  // Create a connection from the pool
   pool.getConnection((err, connection) => {
     if (err) {
       console.error("Error getting MySQL connection:", err);
@@ -207,7 +173,6 @@ app.get("/tracks", (req, res) => {
       return;
     }
 
-    // Retrieve tracks from the database with pagination
     const selectQuery = "SELECT * FROM tracks LIMIT ? OFFSET ?";
     const values = [pageSize, offset];
 
@@ -219,32 +184,33 @@ app.get("/tracks", (req, res) => {
         res.status(200).json(tracks);
       }
 
-      connection.release(); // Release the connection back to the pool
+      connection.release();
     });
   });
 });
 
-app.get("/artists", (req, res) => {
-  // Create a connection from the pool
-  pool.getConnection((err, connection) => {
+app.post("/artists", (req, res) => {
+  const { artist_name, birth_date } = req.body;
+  const sql = "INSERT INTO Artists (artist_name, birth_date) VALUES (?, ?)";
+  pool.query(sql, [artist_name, birth_date], (err, result) => {
     if (err) {
-      console.error("Error getting MySQL connection:", err);
+      console.error("Error creating artist:", err);
+      res.status(500).send("Error creating artist");
+      return;
+    }
+    res.status(201).json({ artist_id: result.insertId });
+  });
+});
+
+app.get("/artists", (req, res) => {
+  const sql = "SELECT * FROM Artists";
+  pool.query(sql, (err, artists) => {
+    if (err) {
+      console.error("Error retrieving artists:", err);
       res.status(500).send("Error retrieving artists");
       return;
     }
-
-    // Retrieve artists from the database
-    const selectQuery = "SELECT * FROM artists";
-    connection.query(selectQuery, (selectErr, artists) => {
-      if (selectErr) {
-        console.error("Error retrieving artists:", selectErr);
-        res.status(500).send("Error retrieving artists");
-      } else {
-        res.status(200).json(artists);
-      }
-
-      connection.release(); // Release the connection back to the pool
-    });
+    res.status(200).json(artists);
   });
 });
 

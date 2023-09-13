@@ -1,9 +1,11 @@
 const express = require("express");
 const mysql = require("mysql");
+const cors = require("cors");
 const bodyParser = require("body-parser");
 const fs = require("fs");
 
 const app = express();
+app.use(cors());
 const port = 3000;
 
 const dbConfig = {
@@ -15,6 +17,8 @@ const dbConfig = {
     ca: fs.readFileSync("ssl/DigiCertGlobalRootCA.crt.pem"),
   },
 };
+
+//Brugeren skal kunne søge på artist, album eller track, og få vist lister der viser:
 
 app.post("/album_artists", (req, res) => {
   const { album_id, artist_id } = req.body;
@@ -211,6 +215,176 @@ app.get("/artists", (req, res) => {
       return;
     }
     res.status(200).json(artists);
+  });
+});
+
+// Search for artists by name
+app.get("/search/artists", (req, res) => {
+  const { query } = req.query;
+  const sql = "SELECT * FROM Artists WHERE artist_name LIKE ?";
+  const searchQuery = `%${query}%`;
+
+  pool.query(sql, [searchQuery], (err, artists) => {
+    if (err) {
+      console.error("Error searching for artists:", err);
+      res.status(500).send("Error searching for artists");
+      return;
+    }
+    res.status(200).json(artists);
+  });
+});
+
+// Search for albums by title
+app.get("/search/albums", (req, res) => {
+  const { query } = req.query;
+  const sql = "SELECT * FROM Albums WHERE album_title LIKE ?";
+  const searchQuery = `%${query}%`;
+
+  pool.query(sql, [searchQuery], (err, albums) => {
+    if (err) {
+      console.error("Error searching for albums:", err);
+      res.status(500).send("Error searching for albums");
+      return;
+    }
+    res.status(200).json(albums);
+  });
+});
+
+// Search for tracks by title
+app.get("/search/tracks", (req, res) => {
+  const { query } = req.query;
+  const sql = "SELECT * FROM Tracks WHERE track_title LIKE ?";
+  const searchQuery = `%${query}%`;
+
+  pool.query(sql, [searchQuery], (err, tracks) => {
+    if (err) {
+      console.error("Error searching for tracks:", err);
+      res.status(500).send("Error searching for tracks");
+      return;
+    }
+    res.status(200).json(tracks);
+  });
+});
+// Backend API Route
+app.get("/search/albums-with-tracks", (req, res) => {
+  const { query } = req.query;
+  const albumSql = "SELECT * FROM Albums WHERE album_title LIKE ?";
+  const searchQuery = `%${query}%`;
+
+  // First, find the album(s) that match the query
+  pool.query(albumSql, [searchQuery], (err, albums) => {
+    if (err) {
+      console.error("Error searching for albums:", err);
+      res.status(500).send("Error searching for albums");
+      return;
+    }
+
+    // Then, for each album, find its related tracks
+    const albumsWithTracks = [];
+
+    const trackSql = "SELECT * FROM tracks WHERE album_id = ?";
+
+    const getTracksForAlbum = (album) => {
+      return new Promise((resolve, reject) => {
+        pool.query(trackSql, [album.album_id], (err, tracks) => {
+          if (err) {
+            console.error("Error fetching tracks for album:", err);
+            reject(err);
+          } else {
+            resolve({ ...album, tracks });
+          }
+        });
+      });
+    };
+
+    const albumPromises = albums.map(getTracksForAlbum);
+
+    Promise.all(albumPromises)
+      .then((result) => {
+        albumsWithTracks.push(...result);
+        res.status(200).json(albumsWithTracks);
+      })
+      .catch((error) => {
+        console.error("Error fetching tracks for albums:", error);
+        res.status(500).send("Error fetching tracks for albums");
+      });
+  });
+});
+
+// Backend API Route
+app.get("/search/albums-with-artists-and-tracks", (req, res) => {
+  const { query } = req.query;
+  const searchQuery = `%${query}%`;
+
+  // SQL query to fetch albums with related artists and tracks
+  const sql = `
+    SELECT
+      a.album_id,
+      a.album_title,
+      a.release_date,
+      b.artist_id,
+      b.artist_name,
+      t.track_id,
+      t.track_title,
+      t.duration
+    FROM Albums a
+    LEFT JOIN Album_Artists aa ON a.album_id = aa.album_id
+    LEFT JOIN Artists b ON aa.artist_id = b.artist_id
+    LEFT JOIN Tracks t ON a.album_id = t.album_id
+    WHERE a.album_title LIKE ?;
+  `;
+
+  pool.query(sql, [searchQuery], (err, results) => {
+    if (err) {
+      console.error("Error searching for albums with artists and tracks:", err);
+      res
+        .status(500)
+        .send("Error searching for albums with artists and tracks");
+      return;
+    }
+
+    // Process the results and structure the data as needed
+
+    const albumsWithArtistsAndTracks = [];
+    results.forEach((row) => {
+      let existingAlbum = albumsWithArtistsAndTracks.find(
+        (album) => album.album_id === row.album_id
+      );
+
+      if (!existingAlbum) {
+        // Create a new album entry if it doesn't exist
+        const album = {
+          album_id: row.album_id,
+          album_title: row.album_title,
+          release_date: row.release_date,
+          artists: [],
+          tracks: [], // Initialize an empty array for tracks
+        };
+        albumsWithArtistsAndTracks.push(album);
+        existingAlbum = album; // Assign the new album to existingAlbum
+      }
+
+      // Add artist information
+      if (row.artist_id && row.artist_name) {
+        const artist = {
+          artist_id: row.artist_id,
+          artist_name: row.artist_name,
+        };
+        existingAlbum.artists.push(artist);
+      }
+
+      // Add track information
+      if (row.track_id && row.track_title && row.duration) {
+        const track = {
+          track_id: row.track_id,
+          track_title: row.track_title,
+          duration: row.duration,
+        };
+        existingAlbum.tracks.push(track);
+      }
+    });
+
+    res.status(200).json(albumsWithArtistsAndTracks);
   });
 });
 

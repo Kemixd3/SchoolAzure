@@ -11,9 +11,11 @@ Go to the github page [] to use the program
 
 ### List of artists/artists
 Sort by selecting what data you want
+
 1. search artists, album and tracks
-2. search albums by a specific artist
-3. search 
+2. search artists
+3. search albums by a specific artist
+4. search 
 
 In the search bar type what you are looking for and click search
 

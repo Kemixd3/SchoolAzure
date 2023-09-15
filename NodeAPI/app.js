@@ -448,6 +448,106 @@ app.post("/albums_and_songs", async(req, res) => {
     }
 });
 
+
+
+
+
+app.delete("/tracks/:trackId", (req, res) => {
+    const trackId = req.params.trackId;
+    const sql = "DELETE FROM Tracks WHERE track_id = ?";
+
+    pool.query(sql, [trackId], (err, result) => {
+        if (err) {
+            console.error("Error deleting track:", err);
+            res.status(500).send("Error deleting track");
+            return;
+        }
+        res.status(204).send(); // 204 No Content indicates successful deletion
+    });
+});
+
+app.delete("/artists/:artistId", (req, res) => {
+    const artistId = req.params.artistId;
+    const sql = "DELETE FROM Artists WHERE artist_id = ?";
+
+    pool.query(sql, [artistId], (err, result) => {
+        if (err) {
+            console.error("Error deleting artist:", err);
+            res.status(500).send("Error deleting artist");
+            return;
+        }
+        res.status(204).send(); // 204 No Content indicates successful deletion
+    });
+});
+
+app.delete("/albums/:albumId", (req, res) => {
+    const albumId = req.params.albumId;
+    const sql = "DELETE FROM Albums WHERE album_id = ?";
+
+    pool.query(sql, [albumId], (err, result) => {
+        if (err) {
+            console.error("Error deleting album:", err);
+            res.status(500).send("Error deleting album");
+            return;
+        }
+        res.status(204).send(); // 204 No Content indicates successful deletion
+    });
+});
+
+
+app.put("/tracks/:trackId", (req, res) => {
+    const trackId = req.params.trackId;
+    const { track_title, duration, album_id } = req.body;
+    const sql = "UPDATE Tracks SET track_title = ?, duration = ?, album_id = ? WHERE track_id = ?";
+
+    pool.query(sql, [track_title, duration, album_id, trackId], (err, result) => {
+        if (err) {
+            console.error("Error updating track:", err);
+            res.status(500).send("Error updating track");
+            return;
+        }
+        res.status(200).json({ message: "Track updated successfully" });
+    });
+});
+
+app.put("/artists/:artistId", (req, res) => {
+    const artistId = req.params.artistId;
+    const { artist_name, birth_date } = req.body;
+    const sql = "UPDATE Artists SET artist_name = ?, birth_date = ? WHERE artist_id = ?";
+
+    pool.query(sql, [artist_name, birth_date, artistId], (err, result) => {
+        if (err) {
+            console.error("Error updating artist:", err);
+            res.status(500).send("Error updating artist");
+            return;
+        }
+        res.status(200).json({ message: "Artist updated successfully" });
+    });
+});
+
+app.put("/albums/:albumId", (req, res) => {
+    const albumId = req.params.albumId;
+    const { album_title, release_date } = req.body;
+    const sql = "UPDATE Albums SET album_title = ?, release_date = ? WHERE album_id = ?";
+
+    pool.query(sql, [album_title, release_date, albumId], (err, result) => {
+        if (err) {
+            console.error("Error updating album:", err);
+            res.status(500).send("Error updating album");
+            return;
+        }
+        res.status(200).json({ message: "Album updated successfully" });
+    });
+});
+
+
+
+
+
+
+
+
+
 // Manual rollback function
 
 app.listen(port, () => {

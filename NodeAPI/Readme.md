@@ -28,8 +28,8 @@ In the search bar type what you are looking for and click search
 ### Get / Post / Put / Delete / Search albums
 GET /albums 
 POST /albums { album_title, release_date }
-PUT
-DELETE 
+PUT /albums/:albumId { album_title, release_date }
+DELETE /albums/:albumId
 
 SEARCH /search/albums { album_name }
 
@@ -37,8 +37,8 @@ SEARCH /search/albums { album_name }
 ### Get / Post / Put / Delete / Search artists
 GET /artists 
 POST /artists { artist_name, birth_date }
-PUT
-DELETE 
+PUT /artists/:artistId { artist_name, birth_date }
+DELETE /artists/:artistId
 
 SEARCH /search/artist { artist_name }
 
@@ -46,8 +46,8 @@ SEARCH /search/artist { artist_name }
 ### Get / Post / Put / Delete / Search tracks
 GET /tracks 
 POST /tracks { track_title, duration, album_id }
-PUT
-DELETE 
+PUT /tracks/:trackId { track_title, duration, album_id }
+DELETE /tracks/:trackId 
 
 SEARCH /search/tracks { track_name }
 
@@ -59,4 +59,4 @@ GET /search/searchAll { search_word }
 ### Complete Album
 POST /albums_and_songs { album_title, release_date, songs }
 
-### Extract Album
+### Extract full Album

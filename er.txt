@@ -1,0 +1,69 @@
+Artist -> Album-Artists Relationship (One-to-Many)
+Album -> Album-Artists Relationship (Many-to-Many)
+Album -> Related Albums Relationship (One-to-Many)
+Album -> Album-Tracks Relationship (One-to-Many)
+Album -> Artist (Through Album-Artists Relationship)
+Track -> Track-Artists Relationship (Many-to-Many)
+Track -> Album (Through Album-Tracks Relationship)
+Album-Artists Relationship -> Artist (Many-to-Many)
+Album-Artists Relationship -> Album (Many-to-Many)
+Track-Artists Relationship -> Artist (Many-to-Many)
+Track-Artists Relationship -> Track (Many-to-Many)
+Related Albums Relationship -> Album (One-to-Many)
+Related Albums Relationship -> Album (One-to-Many)
+Album-Tracks Relationship -> Album (One-to-Many)
+Album-Tracks Relationship -> Track (One-to-Many)
+
+
+Entities:
+
+User
+
+Attributes: user_id (PK), name, email, password, image
+Artist
+
+Attributes: artist_id (PK), artist_name, birth_date
+Album
+
+Attributes: album_id (PK), album_title, release_date
+Track
+
+Attributes: track_id (PK), track_title, duration, album_id (FK)
+Relationships:
+
+Album-Artists Relationship
+
+Connects Albums and Artists entities
+Attributes: relationship_id (PK), album_id (FK), artist_id (FK)
+Track-Artists Relationship
+
+Connects Tracks and Artists entities
+Attributes: relationship_id (PK), track_id (FK), artist_id (FK)
+Related Albums Relationship
+
+Connects Albums to other related Albums
+Attributes: relationship_id (PK), original_album_id (FK), related_album_id (FK)
+Album-Tracks Relationship
+
+Connects Albums and Tracks entities
+Attributes: tracklisting_id (PK), album_id (FK), track_id (FK), track_order
+API Routes and their Corresponding Actions:
+
+POST /signup: Create a new User.
+POST /albums_and_songs: Create a new Album with associated Songs.
+POST /artists: Create a new Artist.
+POST /albums: Create a new Album.
+POST /tracks: Create a new Track.
+POST /album_artists: Create a relationship between Albums and Artists.
+POST /track_artists: Create a relationship between Tracks and Artists.
+POST /related_albums: Create a relationship between related Albums.
+POST /album_tracks: Create a relationship between Albums and Tracks.
+GET /albums: Retrieve a list of Albums.
+GET /tracks: Retrieve a list of Tracks.
+GET /artists: Retrieve a list of Artists.
+GET /search/artist: Search for Artists by name.
+GET /search/albums: Search for Albums by title.
+GET /search/tracks: Search for Tracks by title.
+GET /search/albums-with-tracks: Search for Albums with related Tracks.
+GET /search/albums-with-artists-and-tracks: Search for Albums with related Artists and Tracks.
+GET /search/searchAll: Perform a global search across Tracks, Artists, and Albums.

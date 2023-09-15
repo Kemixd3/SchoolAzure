@@ -8,9 +8,9 @@ mangler
 2. In your cmd, write "node server.js"
 3. Open browser and enter the domain "http://localhost:3000/"
 
-## Frontend usage
+## Frontend usage [https://github.com/Kemixd3/SchoolAzure]
 
-Go to the github page [] to use the program
+Go to the azure page [] to use the program
 
 ### List of artists/artists
 
@@ -19,18 +19,44 @@ Sort by selecting what data you want
 1. search artists, album and tracks
 2. search artists
 3. search albums by a specific artist
-4. search
+4. search 
 
 In the search bar type what you are looking for and click search
 
-## Backend Usage
+## Backend Usage [https://github.com/Kemixd3/SchoolAzure]
 
-### Create new artist
+### Get / Post / Put / Delete / Search albums
+GET /albums 
+POST /albums { album_title, release_date }
+PUT
+DELETE 
 
-### Get all artists
+SEARCH /search/albums { album_name }
 
-### Get artist by id
 
-### Update artist
+### Get / Post / Put / Delete / Search artists
+GET /artists 
+POST /artists { artist_name, birth_date }
+PUT
+DELETE 
 
-### Delete artist
+SEARCH /search/artist { artist_name }
+
+
+### Get / Post / Put / Delete / Search tracks
+GET /tracks 
+POST /tracks { track_title, duration, album_id }
+PUT
+DELETE 
+
+SEARCH /search/tracks { track_name }
+
+
+### General Search 
+GET /search/searchAll { search_word }
+
+
+### Complete Album
+POST /albums_and_songs { album_title, release_date, songs }
+
+### Extract Album

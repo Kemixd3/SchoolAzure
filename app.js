@@ -373,11 +373,13 @@ app.get("/search/albums-with-artists-and-tracks", (req, res) => {
     LEFT JOIN Album_Artists aa ON a.album_id = aa.album_id
     LEFT JOIN Artists b ON aa.artist_id = b.artist_id
     LEFT JOIN Tracks t ON a.album_id = t.album_id
-    WHERE a.album_title LIKE ?
+    WHERE (a.album_title LIKE ? OR b.artist_name LIKE ?)
     GROUP BY a.album_id, a.album_title, a.release_date, b.artist_id, b.artist_name;
   `;
 
-    pool.query(sql, [searchQuery], (err, results) => {
+    console.log("Search Query:", searchQuery); // Log the search query for debugging
+
+    pool.query(sql, [searchQuery, searchQuery], (err, results) => {
       if (err) {
         console.error(
           "Error searching for albums with artists and tracks:",

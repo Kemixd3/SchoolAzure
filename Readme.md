@@ -1,25 +1,16 @@
 # SchoolAzure
 
-## Installation and Running
-
-mangler
-
-1. Download Files
-2. In your cmd, write "node server.js"
-3. Open browser and enter the domain "http://localhost:3000/"
-
 ## Frontend usage [https://github.com/Kemixd3/SchoolAzure]
 
-Go to the azure page [] to use the program
+Go to the azure page [https://kemixd3.github.io/KEA_Azure_Frontend/] to use the program
 
-### List of artists/artists
+### List of artists
 
 Sort by selecting what data you want
 
 1. search artists, album and tracks
 2. search artists
 3. search albums by a specific artist
-4. search
 
 In the search bar type what you are looking for and click search
 

@@ -1,5 +1,5 @@
 const express = require("express");
-const mysql = require("mysql2");
+const mysql = require("mysql2/promise");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const fs = require("fs");
@@ -28,16 +28,21 @@ const pool = mysql.createPool(dbConfig);
 //Brugeren skal kunne søge på artist, album eller track, og få vist lister der viser:
 
 app.post("/album_artists", (req, res) => {
-  const { album_id, artist_id } = req.body;
-  const sql = "INSERT INTO Album_Artists (album_id, artist_id) VALUES (?, ?)";
-  pool.query(sql, [album_id, artist_id], (err, result) => {
-    if (err) {
-      console.error("Error creating album-artist relationship:", err);
-      res.status(500).send("Error creating album-artist relationship");
-      return;
-    }
-    res.status(201).json({ relationship_id: result.insertId });
-  });
+  try {
+    const { album_id, artist_id } = req.body;
+    const sql = "INSERT INTO album_artists (album_id, artist_id) VALUES (?, ?)";
+    pool.query(sql, [album_id, artist_id], (err, result) => {
+      if (err) {
+        console.error("Error creating album-artist relationship:", err);
+        res.status(500).send("Error creating album-artist relationship");
+        return;
+      }
+      res.status(201).json({ relationship_id: result.insertId });
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).send("Error in catch");
+  }
 });
 
 app.post("/track_artists", (req, res) => {
@@ -426,28 +431,57 @@ app.get("/search/searchAll", (req, res) => {
     res.status(200).json(results);
   });
 });
+
 app.post("/albums_and_songs", async (req, res) => {
   const { album_title, release_date, songs } = req.body;
   console.log(album_title, release_date, songs);
   try {
-    // Start a database transaction
+    const album_id = await insertAlbumAndGetId(album_title, release_date);
 
-    // SQL query to insert the album
-    const albumSql =
-      "INSERT INTO Albums (album_title, release_date) VALUES (?, ?)";
-    const albumResult = await pool.query(albumSql, [album_title, release_date]);
-
-    const album_id = albumResult.insertId;
-    console.log(album_id);
-    res.status(201).json({ album_id });
+    if (album_id !== null) {
+      // Insert songs here using the album_id
+      // ...
+      for (const song of songs) {
+        const { track_title, duration } = song;
+        const trackSql =
+          "INSERT INTO Tracks (track_title, duration, album_id) VALUES (?, ?, ?)";
+        await pool.query(trackSql, [track_title, duration, album_id]);
+      }
+      // Respond with the album_id
+      res.status(201).json({ album_id });
+    } else {
+      console.error("Error creating album.");
+      res.status(500).send("Error creating album and songs");
+    }
   } catch (err) {
     console.error("Error creating album and songs:", err);
-
-    // Rollback the transaction if there is an error
-
     res.status(500).send("Error creating album and songs");
   }
 });
+async function insertAlbumAndGetId(album_title, release_date, res) {
+  try {
+    console.log(album_title, release_date);
+
+    // Use pool.query() to execute the query
+    const [albumResult] = await pool.query(
+      "INSERT INTO Albums (album_title, release_date) VALUES (?, ?)",
+      [album_title, release_date]
+    );
+
+    if (albumResult && albumResult.insertId) {
+      const album_id = albumResult.insertId;
+      console.log(album_id);
+      //res.send(201).json({ album_id });
+      return album_id;
+    } else {
+      console.error("Album insert result is undefined or missing insertId.");
+      res.status(500).json("Error creating album and songs");
+    }
+  } catch (err) {
+    console.error("Error creating album and songs:", err);
+    res.status(500).json("Error creating album and songs");
+  }
+}
 
 app.delete("/tracks/:trackId", (req, res) => {
   const trackId = req.params.trackId;

@@ -12,7 +12,7 @@ mangler
 
 Go to the azure page [] to use the program
 
-### List of artists/artists
+### List of artists
 
 Sort by selecting what data you want
 

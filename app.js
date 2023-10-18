@@ -21,12 +21,29 @@ const dbConfig = {
   user: dbUser,
   password: dbPassword,
   database: dbDatabase,
+  port: 3306,
   ssl: {
     ca: fs.readFileSync("ssl/DigiCertGlobalRootCA.crt.pem"), // Path to your CA certificate file
   },
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
 };
+
 const pool = mysql.createPool(dbConfig);
 //Brugeren skal kunne søge på artist, album eller track, og få vist lister der viser:
+console.log(pool);
+
+pool.getConnection((err, connection) => {
+  if (err) {
+    console.error("Error getting MySQL connection:", err);
+    return;
+  }
+
+  // Use the connection for your queries here.
+
+  connection.release(); // Return the connection to the pool when done.
+});
 
 app.post("/album_artists", (req, res) => {
   const { album_id, artist_id } = req.body;

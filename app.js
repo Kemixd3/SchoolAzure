@@ -38,75 +38,38 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-//Brugeren skal kunne søge på artist, album eller track, og få vist lister der viser:
-
-app.post("/signup", async (req, res) => {
+app.get("/search/searchAll", async (req, res) => {
   try {
-    const { name, email, password, image } = req.body;
+    const { query } = req.query;
+    const searchQuery = `%${query}%`;
 
-    // Hash the password before storing (you can add bcrypt logic here)
-    console.log({ name, email, password, image });
-    // Create a connection from the pool
-    pool.promise().getConnection((err, connection) => {
-      if (err) {
-        console.error("Error getting MySQL connection:", err);
-        res.status(500).send("Error registering user");
-        return;
-      }
+    // SQL query to search across all entities (tracks, artists, and albums)
+    const sql = `
+      SELECT 'track' as entity_type, track_id as id, track_title as name, duration
+      FROM Tracks
+      WHERE track_title LIKE ?
+      UNION
+      SELECT 'artist' as entity_type, artist_id as id, artist_name as name, birth_date
+      FROM Artists
+      WHERE artist_name LIKE ?
+      UNION
+      SELECT 'album' as entity_type, album_id as id, album_title as name, release_date
+      FROM Albums
+      WHERE album_title LIKE ?;
+    `;
 
-      const insertQuery =
-        "INSERT INTO users (name, email, password, image) VALUES (?, ?, ?, ?)";
-      connection.query(
-        insertQuery,
-        [name, email, password, image],
-        (insertErr) => {
-          if (insertErr) {
-            console.error("Error inserting user into database:", insertErr);
-            res.status(500).send("Error registering user");
-          } else {
-            res.status(201).send("User registered successfully");
-          }
-
-          connection.release();
-        }
-      );
-    });
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).send("Error registering user");
-  }
-});
-
-// Backend API Route for Global Search
-app.get("/search/searchAll", (req, res) => {
-  const { query } = req.query;
-  const searchQuery = `%${query}%`;
-
-  // SQL query to search across all entities (tracks, artists, and albums)
-  const sql = `
-    SELECT 'track' as entity_type, track_id as id, track_title as name, duration
-    FROM Tracks
-    WHERE track_title LIKE ?
-    UNION
-    SELECT 'artist' as entity_type, artist_id as id, artist_name as name, birth_date
-    FROM Artists
-    WHERE artist_name LIKE ?
-    UNION
-    SELECT 'album' as entity_type, album_id as id, album_title as name, release_date
-    FROM Albums
-    WHERE album_title LIKE ?;
-  `;
-
-  pool.query(sql, [searchQuery, searchQuery, searchQuery], (err, results) => {
-    if (err) {
-      console.error("Error performing global search:", err);
-      res.status(500).send("Error performing global search");
-      return;
-    }
+    const [results] = await pool.query(sql, [
+      searchQuery,
+      searchQuery,
+      searchQuery,
+    ]);
 
     // Process and structure the search results as needed
     res.status(200).json(results);
-  });
+  } catch (err) {
+    console.error("Error performing global search:", err);
+    res.status(500).json({ error: "Error performing global search" });
+  }
 });
 
 app.post("/album_and_songs_and_artist", async (req, res) => {
@@ -187,7 +150,7 @@ app.post("/album_and_songs_and_artist", async (req, res) => {
   }
 });
 
-async function insertAlbumAndGetId(album_title, release_date, res) {
+async function insertAlbumAndGetId(album_title, release_date) {
   try {
     console.log(album_title, release_date);
 
@@ -202,14 +165,13 @@ async function insertAlbumAndGetId(album_title, release_date, res) {
     if (albumResult && albumResult.insertId) {
       const album_id = albumResult.insertId;
       console.log(album_id);
-      //res.send(201).json({ album_id });
       return album_id;
     } else {
       console.error("Album insert result is undefined or missing insertId.");
-      res.status(500).json("Error creating album and songs");
+      return null; // Return null to indicate an error
     }
   } catch (err) {
     console.error("Error creating album and songs:", err);
-    res.status(500).json("Error creating album and songs");
+    return null; // Return null to indicate an error
   }
 }

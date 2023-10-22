@@ -8,10 +8,10 @@ artistsController.use(cors());
 // Create a new artist
 artistsController.post("/artists", async (req, res) => {
   try {
-    const { artist_name, birth_date } = req.body;
-    const sql = "INSERT INTO Artists (artist_name, birth_date) VALUES (?, ?)";
+    const { artist_name, debut } = req.body;
+    const sql = "INSERT INTO Artists (artist_name, debut) VALUES (?, ?)";
 
-    const [result] = await pool.promise().query(sql, [artist_name, birth_date]);
+    const [result] = await pool.promise().query(sql, [artist_name, debut]);
 
     res.status(201).json({ artist_id: result.insertId });
   } catch (err) {
@@ -75,13 +75,22 @@ artistsController.delete("/artists/:artistId", async (req, res) => {
 artistsController.put("/artists/:artistId", async (req, res) => {
   try {
     const artistId = req.params.artistId;
-    const { artist_name, birth_date } = req.body;
-    const sql =
-      "UPDATE Artists SET artist_name = ?, birth_date = ? WHERE artist_id = ?";
+    const { artist_name, debut } = req.body;
 
-    const [result] = await pool
-      .promise()
-      .query(sql, [artist_name, birth_date, artistId]);
+    let sql;
+    let params;
+
+    if (artist_name !== null && artist_name !== undefined) {
+      // Update artist_name if it's not null or undefined
+      sql = "UPDATE Artists SET artist_name = ?, debut = ? WHERE artist_id = ?";
+      params = [artist_name, debut, artistId];
+    } else {
+      // Only update debut
+      sql = "UPDATE Artists SET debut = ? WHERE artist_id = ?";
+      params = [debut, artistId];
+    }
+
+    const [result] = await pool.promise().query(sql, params);
 
     if (result.affectedRows === 0) {
       // No artist was updated (not found)

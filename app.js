@@ -73,8 +73,8 @@ app.get("/search/searchAll", async (req, res) => {
 });
 
 app.post("/album_and_songs_and_artist", async (req, res) => {
-  const { album_title, release_date, artist_name, songs } = req.body;
-  console.log(album_title, release_date, artist_name, songs);
+  const { album_title, release_date, artist_name, debut, songs } = req.body;
+  console.log(album_title, release_date, artist_name, debut, songs);
 
   try {
     let artist_id;
@@ -93,7 +93,10 @@ app.post("/album_and_songs_and_artist", async (req, res) => {
       // If the artist doesn't exist, create a new artist record
       const [newArtistResult] = await pool
         .promise()
-        .query("INSERT INTO Artists (artist_name) VALUES (?)", [artist_name]);
+        .query("INSERT INTO Artists (artist_name, debut) VALUES (?, ?)", [
+          artist_name,
+          debut,
+        ]);
       artist_id = newArtistResult.insertId;
     }
 

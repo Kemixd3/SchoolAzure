@@ -14,11 +14,27 @@ Sort and filter by selecting the desired data:
 
 Enter your query in the search bar and click "Search."
 
-## E/R Diagram of Database Relations
-
-![SchoolAzure Image](ERDiagram.png)
-
 ## Backend Usage [https://github.com/Kemixd3/SchoolAzure/tree/preprod]
+
+### Dependencies
+
+This project uses the following dependencies:
+
+- [cors](https://www.npmjs.com/package/cors): A middleware for enabling Cross-Origin Resource Sharing in your Express application.
+- [dotenv](https://www.npmjs.com/package/dotenv): Loads environment variables from a `.env` file, which is useful for securely storing sensitive information.
+- [express](https://www.npmjs.com/package/express): A web application framework for Node.js that simplifies building web APIs.
+- [mysql2](https://www.npmjs.com/package/mysql2): A Node.js-based MySQL library that provides a fast and efficient interface for MySQL databases.
+
+To install these dependencies, run:
+
+```bash
+npm install
+
+
+To run it use:
+npm start
+
+
 
 ### Endpoints for Managing Albums
 
@@ -55,3 +71,4 @@ Enter your query in the search bar and click "Search."
 Ensure that the backend server is up and running on the specified port (default is 3000).
 
 ### By Nikolai Berthelsen and Silas Sandager
+```

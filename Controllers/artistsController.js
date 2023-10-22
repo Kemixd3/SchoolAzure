@@ -1,76 +1,99 @@
 import { Router } from "express";
 import pool from "../Services/dbService.js";
+import cors from "cors";
 const artistsController = Router();
 
-artistsController.post("/artists", (req, res) => {
-  const { artist_name, birth_date } = req.body;
-  const sql = "INSERT INTO Artists (artist_name, birth_date) VALUES (?, ?)";
-  pool.promise().query(sql, [artist_name, birth_date], (err, result) => {
-    if (err) {
-      console.error("Error creating artist:", err);
-      res.status(500).send("Error creating artist");
-      return;
-    }
+artistsController.use(cors());
+
+// Create a new artist
+artistsController.post("/artists", async (req, res) => {
+  try {
+    const { artist_name, birth_date } = req.body;
+    const sql = "INSERT INTO Artists (artist_name, birth_date) VALUES (?, ?)";
+
+    const [result] = await pool.promise().query(sql, [artist_name, birth_date]);
+
     res.status(201).json({ artist_id: result.insertId });
-  });
+  } catch (err) {
+    console.error("Error creating artist:", err);
+    res.status(500).json({ error: "Error creating artist" });
+  }
 });
 
-artistsController.get("/artists", (req, res) => {
-  const sql = "SELECT * FROM Artists";
-  pool.query(sql, (err, artists) => {
-    if (err) {
-      console.error("Error retrieving artists:", err);
-      res.status(500).send("Error retrieving artists");
-      return;
-    }
+// Retrieve all artists
+artistsController.get("/artists", async (req, res) => {
+  try {
+    const sql = "SELECT * FROM Artists";
+    const [artists] = await pool.promise().query(sql);
+
     res.status(200).json(artists);
-  });
+  } catch (err) {
+    console.error("Error retrieving artists:", err);
+    res.status(500).json({ error: "Error retrieving artists" });
+  }
 });
 
 // Search for artists by name
-artistsController.get("/search/artist", (req, res) => {
-  const { query } = req.query;
-  const sql = "SELECT * FROM Artists WHERE artist_name LIKE ?";
-  const searchQuery = `%${query}%`;
+// Search for artists by name
+artistsController.get("/search/artist", async (req, res) => {
+  try {
+    const { query } = req.query;
+    const searchQuery = `%${query}%`;
+    const sql = "SELECT * FROM Artists WHERE artist_name LIKE ?";
 
-  artistsController.query(sql, [searchQuery], (err, artists) => {
-    if (err) {
-      console.error("Error searching for artists:", err);
-      res.status(500).send("Error searching for artists");
-      return;
-    }
+    const [artists] = await pool.promise().query(sql, [searchQuery]);
+
     res.status(200).json(artists);
-  });
+  } catch (err) {
+    console.error("Error searching for artists:", err);
+    res.status(500).json({ error: "Error searching for artists" });
+  }
 });
 
-artistsController.delete("/artists/:artistId", (req, res) => {
-  const artistId = req.params.artistId;
-  const sql = "DELETE FROM Artists WHERE artist_id = ?";
+// Delete an artist by ID
+artistsController.delete("/artists/:artistId", async (req, res) => {
+  try {
+    const artistId = req.params.artistId;
+    const sql = "DELETE FROM Artists WHERE artist_id = ?";
 
-  pool.query(sql, [artistId], (err, result) => {
-    if (err) {
-      console.error("Error deleting artist:", err);
-      res.status(500).send("Error deleting artist");
-      return;
+    const [result] = await pool.promise().query(sql, [artistId]);
+
+    if (result.affectedRows === 0) {
+      // No artist was deleted (not found)
+      res.status(404).json({ message: "Artist not found" });
+    } else {
+      // Artist deleted successfully
+      res.status(204).send(); // 204 No Content indicates successful deletion
     }
-    res.status(204).send(); // 204 No Content indicates successful deletion
-  });
+  } catch (err) {
+    console.error("Error deleting artist:", err);
+    res.status(500).json({ error: "Error deleting artist" });
+  }
 });
 
-artistsController.put("/artists/:artistId", (req, res) => {
-  const artistId = req.params.artistId;
-  const { artist_name, birth_date } = req.body;
-  const sql =
-    "UPDATE Artists SET artist_name = ?, birth_date = ? WHERE artist_id = ?";
+// Update an artist by ID
+artistsController.put("/artists/:artistId", async (req, res) => {
+  try {
+    const artistId = req.params.artistId;
+    const { artist_name, birth_date } = req.body;
+    const sql =
+      "UPDATE Artists SET artist_name = ?, birth_date = ? WHERE artist_id = ?";
 
-  pool.query(sql, [artist_name, birth_date, artistId], (err, result) => {
-    if (err) {
-      console.error("Error updating artist:", err);
-      res.status(500).send("Error updating artist");
-      return;
+    const [result] = await pool
+      .promise()
+      .query(sql, [artist_name, birth_date, artistId]);
+
+    if (result.affectedRows === 0) {
+      // No artist was updated (not found)
+      res.status(404).json({ message: "Artist not found" });
+    } else {
+      // Artist updated successfully
+      res.status(200).json({ message: "Artist updated successfully" });
     }
-    res.status(200).json({ message: "Artist updated successfully" });
-  });
+  } catch (err) {
+    console.error("Error updating artist:", err);
+    res.status(500).json({ error: "Error updating artist" });
+  }
 });
 
 export default artistsController;

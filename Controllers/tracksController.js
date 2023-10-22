@@ -2,52 +2,39 @@ import { Router } from "express";
 const tracksController = Router();
 
 import pool from "../Services/dbService.js";
+// Create a new track
+tracksController.post("/tracks", async (req, res) => {
+  try {
+    const { track_title, duration, album_id } = req.body;
+    const sql =
+      "INSERT INTO Tracks (track_title, duration, album_id) VALUES (?, ?, ?)";
+    const [result] = await pool
+      .promise()
+      .query(sql, [track_title, duration, album_id]);
 
-tracksController.post("/tracks", (req, res) => {
-  const { track_title, duration, album_id } = req.body;
-  const sql =
-    "INSERT INTO Tracks (track_title, duration, album_id) VALUES (?, ?, ?)";
-  pool
-    .promise()
-    .query(sql, [track_title, duration, album_id], (err, result) => {
-      if (err) {
-        console.error("Error creating track:", err);
-        console.log("DB_USER:", dbUser);
-        res.status(500).send("Error creating track");
-        return;
-      }
-      res.status(201).json({ track_id: result.insertId });
-    });
+    res.status(201).json({ track_id: result.insertId });
+  } catch (err) {
+    console.error("Error creating track:", err);
+    res.status(500).json({ error: "Error creating track" });
+  }
 });
 
-tracksController.get("/tracks", (req, res) => {
-  const pageSize = 20;
-  const pageNum = req.query.pageNum || 1;
-
-  const offset = (pageNum - 1) * pageSize;
-
-  pool.getConnection((err, connection) => {
-    if (err) {
-      console.error("Error getting MySQL connection:", err);
-      console.log("DB_USER:", dbUser);
-      res.status(500).send("Error retrieving tracks");
-      return;
-    }
+// Retrieve a paginated list of tracks
+tracksController.get("/tracks", async (req, res) => {
+  try {
+    const pageSize = 20;
+    const pageNum = req.query.pageNum || 1;
+    const offset = (pageNum - 1) * pageSize;
 
     const selectQuery = "SELECT * FROM tracks LIMIT ? OFFSET ?";
     const values = [pageSize, offset];
 
-    connection.query(selectQuery, values, (selectErr, tracks) => {
-      if (selectErr) {
-        console.error("Error retrieving tracks:", selectErr);
-        res.status(500).send("Error retrieving tracks");
-      } else {
-        res.status(200).json(tracks);
-      }
-
-      connection.release();
-    });
-  });
+    const [tracks] = await pool.promise().query(selectQuery, values);
+    res.status(200).json(tracks);
+  } catch (err) {
+    console.error("Error retrieving tracks:", err);
+    res.status(500).json({ error: "Error retrieving tracks" });
+  }
 });
 
 tracksController.post("/track_artists", (req, res) => {
@@ -64,49 +51,57 @@ tracksController.post("/track_artists", (req, res) => {
 });
 
 // Search for tracks by title
-tracksController.get("/search/tracks", (req, res) => {
-  const { query } = req.query;
-  const sql = "SELECT * FROM Tracks WHERE track_title LIKE ?";
-  const searchQuery = `%${query}%`;
+tracksController.get("/search/tracks", async (req, res) => {
+  try {
+    const { query } = req.query;
+    const searchQuery = `%${query}%`;
 
-  pool.query(sql, [searchQuery], (err, tracks) => {
-    if (err) {
-      console.error("Error searching for tracks:", err);
-      res.status(500).send("Error searching for tracks");
-      return;
-    }
+    const sql = "SELECT * FROM Tracks WHERE track_title LIKE ?";
+    const [tracks] = await pool.promise().query(sql, [searchQuery]);
+
     res.status(200).json(tracks);
-  });
+  } catch (err) {
+    console.error("Error searching for tracks:", err);
+    res.status(500).json({ error: "Error searching for tracks" });
+  }
 });
 
-tracksController.delete("/tracks/:trackId", (req, res) => {
+tracksController.delete("/tracks/:trackId", async (req, res) => {
   const trackId = req.params.trackId;
   const sql = "DELETE FROM Tracks WHERE track_id = ?";
 
-  pool.query(sql, [trackId], (err, result) => {
-    if (err) {
-      console.error("Error deleting track:", err);
-      res.status(500).send("Error deleting track");
-      return;
+  try {
+    const [result] = await pool.promise().query(sql, [trackId]);
+    if (result.affectedRows === 0) {
+      res.status(404).json({ error: "Track not found" });
+    } else {
+      res.status(204).send(); // 204 No Content indicates successful deletion
     }
-    res.status(204).send(); // 204 No Content indicates successful deletion
-  });
+  } catch (err) {
+    console.error("Error deleting track:", err);
+    res.status(500).json({ error: "Error deleting track" });
+  }
 });
 
-tracksController.put("/tracks/:trackId", (req, res) => {
+tracksController.put("/tracks/:trackId", async (req, res) => {
   const trackId = req.params.trackId;
   const { track_title, duration, album_id } = req.body;
   const sql =
     "UPDATE Tracks SET track_title = ?, duration = ?, album_id = ? WHERE track_id = ?";
 
-  pool.query(sql, [track_title, duration, album_id, trackId], (err, result) => {
-    if (err) {
-      console.error("Error updating track:", err);
-      res.status(500).send("Error updating track");
-      return;
+  try {
+    const [result] = await pool
+      .promise()
+      .query(sql, [track_title, duration, album_id, trackId]);
+    if (result.affectedRows === 0) {
+      res.status(404).json({ error: "Track not found" });
+    } else {
+      res.status(200).json({ message: "Track updated successfully" });
     }
-    res.status(200).json({ message: "Track updated successfully" });
-  });
+  } catch (err) {
+    console.error("Error updating track:", err);
+    res.status(500).json({ error: "Error updating track" });
+  }
 });
 
 export default tracksController;
